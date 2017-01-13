@@ -7,6 +7,7 @@ function restart {
     LOGFILE=/var/log/prerender/forever.log
     OUTFILE=/var/log/prerender/prerender-$1.log
     ERRFILE=/var/log/prerender/prerender-$1.log
+    PRERENDER_ACCESS_LOGS_FILE=/var/log/prerender/access-$1.log
     SCRIPT=server.js
     CACHE_ROOT_DIR=/data/ebs1/prerender-cache/
     PORT=$((4337 + 2 * ($1 - 1)))
@@ -16,8 +17,8 @@ function restart {
 
     sleep 2
 
-    echo "PORT=$PORT CACHE_ROOT_DIR=$CACHE_ROOT_DIR forever start --uid=$PROCESS_ID --pidFile=$PIDFILE -a -l $LOGFILE -o $OUTFILE -e $ERRFILE $SCRIPT"
-    PORT=$PORT CACHE_ROOT_DIR=$CACHE_ROOT_DIR forever start --uid=$PROCESS_ID --pidFile=$PIDFILE -a -l $LOGFILE -o $OUTFILE -e $ERRFILE $SCRIPT
+    echo "PORT=$PORT CACHE_ROOT_DIR=$CACHE_ROOT_DIR PRERENDER_ACCESS_LOGS_FILE=$PRERENDER_ACCESS_LOGS_FILE forever start --uid=$PROCESS_ID --pidFile=$PIDFILE -a -l $LOGFILE -o $OUTFILE -e $ERRFILE $SCRIPT"
+    PORT=$PORT CACHE_ROOT_DIR=$CACHE_ROOT_DIR PRERENDER_ACCESS_LOGS_FILE=$PRERENDER_ACCESS_LOGS_FILE forever start --uid=$PROCESS_ID --pidFile=$PIDFILE -a -l $LOGFILE -o $OUTFILE -e $ERRFILE $SCRIPT
 }
 
 if [ -z "$1" ]
