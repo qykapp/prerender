@@ -14,6 +14,7 @@
     "fs-extra": "^1.0.0",
     "he": "^1.1.0",
     "lodash": "^4.14.1",
+    "morgan": "^1.7.0",
     "phridge": "^2.0.0",
     "sanitize-filename": "^1.6.1",
     "signal-exit": "^3.0.0"
