@@ -6,7 +6,7 @@ var server = prerender({
     iterations: process.env.PRERENDER_NUM_ITERATIONS,
     accessLogs: {
       filepath: process.env.PRERENDER_ACCESS_LOGS_FILE,
-      format: process.env.PRERENDER_ACCESS_LOGS_FORMAT || ':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] - :response-time ms ":referrer" ":user-agent"',
+      format: process.env.PRERENDER_ACCESS_LOGS_FORMAT || ':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] :response-time ":referrer" ":user-agent"',
     },
 });
 
