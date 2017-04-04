@@ -9,7 +9,8 @@ const sanitize = require("sanitize-filename")
 
 const CACHE_ROOT_DIR = process.env.CACHE_ROOT_DIR || path.join(os.tmpdir(), "prerender-cache")
 const CACHE_FILENAME = 'prerender.cache.html'
-const CACHE_TTL_MAX = 60*60*24*25 /*seconds*/
+const CACHE_TTL_MAX_START = 60*60*24*25 /*seconds*/
+const CACHE_TTL_MAX_END = 60*60*24*29 /*seconds*/
 
 let stats = {}
 
@@ -57,15 +58,19 @@ async function processUrl(url, fetchTime) {
 
     let filepath = getFilepath(url.loc)
     if (fs.existsSync(filepath)) {
-      let date = new Date()
       let filetime = fs.statSync(filepath).mtime.getTime()
 
       // Dont send request if:
-      // - file is within CACHE_TTL_MAX; and
-      // - page hasn't been updated since file was created
-      if (moment().diff(filetime, 'seconds') < CACHE_TTL_MAX) {
-        if (!lastmod) return { refreshed: false }
-        else if (lastmod.isBefore(filetime)) return { refreshed: false }
+      // - page hasn't been updated since file was created; and
+      // - file is within CACHE_TTL_MAX
+      if (!lastmod || lastmod.isBefore(filetime)) {
+        if (moment().diff(filetime, 'seconds') < CACHE_TTL_MAX_START) return { refreshed: false }
+
+        if (moment().diff(filetime, 'seconds') > CACHE_TTL_MAX_START
+          && moment().diff(filetime, 'seconds') < CACHE_TTL_MAX_END
+          && Math.random() < 0.5) {
+          return { refreshed: false }
+        }
       }
     }
 
