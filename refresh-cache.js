@@ -11,6 +11,8 @@ const CACHE_ROOT_DIR = process.env.CACHE_ROOT_DIR || path.join(os.tmpdir(), "pre
 const CACHE_FILENAME = 'prerender.cache.html'
 const CACHE_TTL_MAX = 60*60*24*25 /*seconds*/
 
+let stats = {}
+
 function xmlToJson(xml, options) {
   return new Promise((resolve, reject) => {
     _parseString(xml, options, (err, result) => {
@@ -31,17 +33,18 @@ function request(query) {
 
 function getFilepath(requestUrl) {
   let reqUrl = _url.parse(requestUrl)
+  let filedir
 
   if (reqUrl.pathname && reqUrl.pathname !== '/') {
     // parse the URL path and join it with the cache base path
-    let filedir = path.join(CACHE_ROOT_DIR, path.format(path.parse(reqUrl.pathname)));
+    filedir = path.join(CACHE_ROOT_DIR, path.format(path.parse(reqUrl.pathname)))
     if (reqUrl.query) {
       // a query is set, join this as well
-      filedir = path.join(filedir, sanitize(reqUrl.query));
+      filedir = path.join(filedir, sanitize(reqUrl.query))
     }
   }
 
-  return path.join(filedir, CACHE_FILENAME);
+  return path.join(filedir, CACHE_FILENAME)
 }
 
 async function processUrl(url, fetchTime) {
@@ -52,17 +55,17 @@ async function processUrl(url, fetchTime) {
       lastmod = false
     }
 
-    let filepath = getFilepath(url.loc);
+    let filepath = getFilepath(url.loc)
     if (fs.existsSync(filepath)) {
-      let date = new Date();
-      let filetime = fs.statSync(filepath).mtime.getTime();
+      let date = new Date()
+      let filetime = fs.statSync(filepath).mtime.getTime()
 
       // Dont send request if:
       // - file is within CACHE_TTL_MAX; and
       // - page hasn't been updated since file was created
       if (moment().diff(filetime, 'seconds') < CACHE_TTL_MAX) {
-        if (!lastmod) return
-        else if (lastmod.isBefore(filetime)) return
+        if (!lastmod) return { refreshed: false }
+        else if (lastmod.isBefore(filetime)) return { refreshed: false }
       }
     }
 
@@ -81,6 +84,7 @@ async function processUrl(url, fetchTime) {
     }
 
     await request(query)
+    return { refreshed: true }
 
   } catch (err) {
     console.error(err)
@@ -89,7 +93,7 @@ async function processUrl(url, fetchTime) {
 
 async function processSitemap(sitemapUrl) {
   try {
-    console.log(moment().toISOString(), sitemapUrl)
+    console.log(moment().toISOString(), "Processing: ", sitemapUrl)
     let {response, body} = await request({
       url: sitemapUrl,
       method: 'GET',
@@ -106,9 +110,15 @@ async function processSitemap(sitemapUrl) {
           lastmod: url.lastmod[0]
         })
       })
-      for (url of urls) {
-        await processUrl(url, fetchTime)
+      stats[sitemapUrl] = {
+        total: urls.length,
+        refreshed: 0
       }
+      for (url of urls) {
+        let result = await processUrl(url, fetchTime)
+        if (result.refreshed) stats[sitemapUrl].refreshed += 1
+      }
+      console.log(moment().toISOString(), "Finished: ", sitemapUrl, " ## Refreshed: ", stats[sitemapUrl].refreshed, "/", stats[sitemapUrl].total)
     } else if ('sitemapindex' in sitemapJson) {
       let sitemaps = sitemapJson.sitemapindex.sitemap.map(sitemap => {
         return sitemap.loc[0]
